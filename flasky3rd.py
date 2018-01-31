@@ -17,6 +17,11 @@ from wtforms import StringField,SubmitField
 from wtforms.validators import DataRequired
 #引入主要用于重定向，以解决刷新后需要表格重新提交
 from flask import session,url_for,flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_script import Shell
+from flask_migrate import Migrate,MigrateCommand
+import os
+
 
 
 app = Flask(__name__)
@@ -24,17 +29,53 @@ app = Flask(__name__)
 # 没想到提前以后Bootstrap就没办法用了，一直卡在那里，然后折腾了很久，以为是环境问题
 # app.debug = True
 
+
+basedir  = os.path.abspath(os.path.dirname(__file__))
+# 拼接数据库路径
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir,'data.sqllite')
+# 每次请求结束后会自动提交数据库中的变动
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SECRET_KEY'] = 'hard to guess string'
+db = SQLAlchemy(app)
 bootstrap = Bootstrap(app)
 manager = Manager(app)
+#可以将数据库进行迁移
+migrate = Migrate(app,db)
+manager.add_command('db',MigrateCommand)
 # 如果需要使用Moment本地化时间来导入其库
 moment = Moment(app)
 # 实例化以使用bootstrap
+
 
 class NameForm(FlaskForm):
     # 原来书上使用的是Require现在已经废弃改成DataRequire前面导入的时候也相应修改
     name = StringField('姓名： ',validators=[DataRequired()])
     submit = SubmitField('提交：')
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(64),unique=True)
+    users = db.relationship('User',backref = 'role')
+
+    #返回一个可读性的字符串表示模型主要用于测试
+    def __repr__(self):
+        return '<Role %r>' %self.name
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer,primary_key=True)
+    username = db.Column(db.String(64),unique=True,index=True)
+    role_id = db.Column(db.Integer,db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return  '<User %r>' %self.username
+
+# 添加程序上下文，完成后使用python flash3rd.py shell命令直接可以输入db，app,User，直接可以返回信息
+def make_shell_context():
+    return dict(app=app ,db=db, User=User, Role=Role)
+manager.add_command("shell",Shell(make_context=make_shell_context))
 
 @app.route('/')
 def index():
@@ -54,6 +95,23 @@ def wtf():
         #name = form.name.data
     return render_template('wtf.html',form=form,name=session.get('name'))
 
+@app.route('/data',methods=['GET','POST'])
+def data():
+    form = NameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username = form.name.data)
+            db.session.add(user)
+            session['known'] = False
+            flash('已经将%s添加至数据库中的User表！' %user.username)
+        else:
+            session['known'] = True
+            flash('数据库里面已经有你了！')
+        session['name'] = form.name.data
+        form.name.data = ''
+        return redirect(url_for('data'))
+    return render_template('data.html',form = form,name = session.get('name'),known = session.get('know',False))
 
 # 传递参数进去后在render_template里面要使用name=name
 @app.route('/user/<name>')
