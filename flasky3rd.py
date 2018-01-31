@@ -12,6 +12,11 @@ from flask_script import Manager
 from flask_bootstrap import Bootstrap
 from datetime import datetime
 from flask_moment import Moment
+from flask_wtf import Form
+from wtforms import StringField,SubmitField
+from wtforms.validators import DataRequired
+#引入主要用于重定向，以解决刷新后需要表格重新提交
+from flask import sessions,url_for
 
 
 app = Flask(__name__)
@@ -19,22 +24,31 @@ app = Flask(__name__)
 # 没想到提前以后Bootstrap就没办法用了，一直卡在那里，然后折腾了很久，以为是环境问题
 # app.debug = True
 
-
+app.config['SECRET_KEY'] = 'hard to guess string'
 bootstrap = Bootstrap(app)
 manager = Manager(app)
 # 如果需要使用Moment本地化时间来导入其库
 moment = Moment(app)
 # 实例化以使用bootstrap
 
-
+class NameForm(Form):
+    # 原来书上使用的是Require现在已经废弃改成DataRequire前面导入的时候也相应修改
+    name = StringField('姓名： ',validators=[DataRequired()])
+    submit = SubmitField('提交：')
 
 @app.route('/')
 def index():
     return render_template('index.html',current_time = datetime.utcnow())
 
-@app.route('/test')
-def test():
-    return render_template('test.html')
+# 这里要注意加入POST和GET否则点击后会报500错误
+@app.route('/wtf',methods=['POST','GET'])
+def wtf():
+    name = None
+    form = NameForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        form.name.data = ''
+    return render_template('wtf.html',form=form,name=name)
 
 
 # 传递参数进去后在render_template里面要使用name=name
