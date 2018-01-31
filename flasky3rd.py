@@ -16,7 +16,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,SubmitField
 from wtforms.validators import DataRequired
 #引入主要用于重定向，以解决刷新后需要表格重新提交
-from flask import session,url_for
+from flask import session,url_for,flash
 
 
 app = Flask(__name__)
@@ -45,6 +45,9 @@ def index():
 def wtf():
     form = NameForm()
     if form.validate_on_submit():
+        old_name = session.get('name')
+        if old_name is not None and old_name != form.name.data:
+            flash('好像你改名字了！')
         session['name'] = form.name.data
         return redirect(url_for('wtf'))
         #用session改造刷新问题
