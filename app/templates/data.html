@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Flasky - wtf{% endblock %}
+
+{% block page_content %}
+    {{ name }}
+    {{ wtf.quick_form(form) }}
+{% endblock %}
