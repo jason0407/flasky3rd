@@ -18,7 +18,13 @@ def make_shell_context():
 manager.add_command("shell",Shell(make_context=make_shell_context))
 
 
-
+@manager.command
+def test():
+    """Run the unit tests."""
+    import unittest
+    # 需要注意这里测试的路径
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
 
 
 
