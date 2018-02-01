@@ -42,11 +42,14 @@ app.config['SECRET_KEY'] = 'hard to guess string'
 app.config['MAIL_SERVER'] = 'smtp.163.com'
 app.config['MAIL_PORT'] = 25
 app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USERNAME'] = 'wenzhengde_us@163.com'
-app.config['MAIL_PASSWORD'] = '******'
+#修改后需要重启Pycharm才生效，在这里坑了一小时，我日！
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[Flasky]'
 app.config['FLASKY_MAIL_SENDER'] = 'JASON <wenzhengde_us@163.com>'
 
+print(os.environ.get('MAIL_USERNAME'))
+print(os.environ.get('MAIL_PASSWORD'))
 db = SQLAlchemy(app)
 bootstrap = Bootstrap(app)
 manager = Manager(app)
