@@ -21,6 +21,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_script import Shell
 from flask_migrate import Migrate,MigrateCommand
 import os
+from flask_mail import Mail,Message
+
 
 
 
@@ -36,6 +38,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir,'dat
 # 每次请求结束后会自动提交数据库中的变动
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SECRET_KEY'] = 'hard to guess string'
+app.config['MAIL_SERVER'] = 'smtp.163.com'
+app.config['MAIL_PORT'] = 25
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USERNAME'] = 'wenzhengde_us@163.com'
+app.config['MAIL_PASSWORD'] = '***********'
+app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[Flasky]'
+app.config['FLASKY_MAIL_SENDER'] = 'JASON <wenzhengde_us@163.com>'
+
 db = SQLAlchemy(app)
 bootstrap = Bootstrap(app)
 manager = Manager(app)
@@ -45,6 +55,7 @@ manager.add_command('db',MigrateCommand)
 # 如果需要使用Moment本地化时间来导入其库
 moment = Moment(app)
 # 实例化以使用bootstrap
+mail = Mail(app)
 
 
 class NameForm(FlaskForm):
@@ -77,6 +88,25 @@ def make_shell_context():
     return dict(app=app ,db=db, User=User, Role=Role)
 manager.add_command("shell",Shell(make_context=make_shell_context))
 
+def send_mail(to,subject,template,**kwargs):
+    msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX'] +subject,sender = app.config['FLASKY_MAIL_SENDER'],recipients = [to])
+    msg.body = render_template(template+'.txt',**kwargs)
+    msg.html = render_template(template+'.html',**kwargs)
+    mail.send(msg)
+
+#自定义功能，输入一个邮箱地址，然后往里面发送测试邮件
+@app.route('/sendemail',methods=['GET','POST'])
+def sendemail():
+    form = NameForm()
+    if form.validate_on_submit():
+        session['name'] = form.name.data
+        send_mail(session['name'],'test','mail/newuser')
+        flash('邮件发送成功')
+        return redirect(url_for('sendemail'))
+    return render_template('sendemail.html',name = session.get('name'),form = form)
+    # send_mail('wenzhengde@qq.com','test','mail/newuser')
+
+
 @app.route('/')
 def index():
     return render_template('index.html',current_time = datetime.utcnow())
@@ -104,7 +134,7 @@ def data():
             user = User(username = form.name.data)
             db.session.add(user)
             session['known'] = False
-            flash('已经将%s添加至数据库中的User表！' %user.username)
+            flash('你的名字还没在数据库中，现在将你的名字%s添加至数据库中的User表！' %user.username)
         else:
             session['known'] = True
             flash('数据库里面已经有你了！')
@@ -117,6 +147,7 @@ def data():
 @app.route('/user/<name>')
 def user(name):
     return render_template('user.html',name=name)
+
 
 
 ## 做了URL自动的跳转
