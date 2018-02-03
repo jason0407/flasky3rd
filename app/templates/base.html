@@ -27,6 +27,13 @@
                 <li><a href="/wtf">WTF</a></li>
                 <li><a href="/redirect">Google</a></li>
             </ul>
+            <ul class="nav navbar-nav navbar-right">
+{#                这里有一个巨坑，在教程中用的是current_user.is_authenticated(),但实际中已经不用该（）了#}
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login') }}">Sign in</a></li>
+                {% endif %}
         </div>
     </div>
 </div>

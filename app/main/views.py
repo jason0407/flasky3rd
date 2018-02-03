@@ -1,11 +1,13 @@
 from datetime import datetime
 from flask import render_template,session,redirect,url_for,flash
+from flask_login import login_required
 
 from . import main
 from .forms import NameForm
 from .. import db
 from app.models import User
 from app.email import send_mail
+from ..auth.views import auth
 
 
 #自定义功能，输入一个邮箱地址，然后往里面发送测试邮件
@@ -21,6 +23,11 @@ def sendemail():
     # send_mail('wenzhengde@qq.com','test','mail/newuser')
 
 
+
+# @login_required
+# def secret():
+#     flash('未经授权不能查看该网页,请重新登陆')
+#     return redirect(url_for('auth.login'))
 @main.route('/')
 def index():
     return render_template('index.html',current_time = datetime.utcnow())
