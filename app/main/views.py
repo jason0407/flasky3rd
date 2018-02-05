@@ -7,7 +7,6 @@ from .forms import NameForm
 from .. import db
 from app.models import User
 from app.email import send_mail
-from ..auth.views import auth
 
 
 #自定义功能，输入一个邮箱地址，然后往里面发送测试邮件

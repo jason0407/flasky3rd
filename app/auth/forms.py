@@ -13,6 +13,7 @@ class LoginForm(FlaskForm):
     remeberme = BooleanField('记住登陆')
     submit = SubmitField('提交')
 
+
 class RegisterationForm(FlaskForm):
     # 这里需要注意的是DataReuired后面是有括号的，被坑过一回
     email = StringField('Email:',validators=[DataRequired(),Length(1,64),Email()])
@@ -26,7 +27,15 @@ class RegisterationForm(FlaskForm):
     def validate_email(self,field):
         if User.query.filter_by(email=field.data).first():
             raise ValidationError('邮箱已注册')
+
     # 验证用户名是否已被注册
     def validate_username(self,field):
         if User.query.filter_by(username = field.data).first():
             raise ValidationError('用户名已经存在')
+
+
+class ChangePasswordForm(FlaskForm):
+    old_password = PasswordField('旧密码',validators=[DataRequired()])
+    password = PasswordField('新密码',validators=[DataRequired(),EqualTo('password2',message='密码不匹配')])
+    password2 = PasswordField('确认你的新密码',validators=[DataRequired()])
+    submit = SubmitField('更新密码')

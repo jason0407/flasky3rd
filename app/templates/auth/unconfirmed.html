@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Flasky - 未确认邮件{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>你好{{ current_user.username }}，你的邮件还未确认，请点击确认你的邮件链接。</h1>
+    <h2> <p>重新发送确认邮件 <a href="{{ url_for('auth.resend_confirmation') }}">重新发送确认邮件</a></p></h2>
+</div>
+
+{% endblock %}
