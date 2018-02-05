@@ -39,3 +39,12 @@ class ChangePasswordForm(FlaskForm):
     password = PasswordField('新密码',validators=[DataRequired(),EqualTo('password2',message='密码不匹配')])
     password2 = PasswordField('确认你的新密码',validators=[DataRequired()])
     submit = SubmitField('更新密码')
+
+class ChangeEmailForm(FlaskForm):
+    email = StringField('新的Email地址',validators=[DataRequired(),Length(1,64),Email()])
+    password = PasswordField('password',validators=[DataRequired()])
+    submit = SubmitField('更新Email地址')
+
+    def validate_email(self,field):
+        if User.query.filter_by(email=field.data).first():
+            raise ValidationError('该Email地址已经被注册')
