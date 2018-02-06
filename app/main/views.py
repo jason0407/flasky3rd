@@ -7,6 +7,8 @@ from .forms import NameForm
 from .. import db
 from app.models import User
 from app.email import send_mail
+from ..decorators import admin_required,permission_required
+from ..models import Permission
 
 
 #自定义功能，输入一个邮箱地址，然后往里面发送测试邮件
@@ -75,5 +77,17 @@ def user(name):
 def rd():
     return redirect('http://www.google.com')
 
+
+@main.route('/admin')
+@login_required
+@admin_required
+def for_admin_only():
+    return "For administrators!"
+
+@main.route('/moderator')
+@login_required
+@permission_required(Permission.MODERATE_COMMENTS)
+def for_moderators_only():
+    return "For comment moderators!"
 
 

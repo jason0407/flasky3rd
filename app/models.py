@@ -49,7 +49,7 @@ class Permission:
     FOLLOW = 0x01
     COMMENT = 0x02
     WRITE_ARTICLES = 0x04
-    MODERATE_COMMENTS = 0x04
+    MODERATE_COMMENTS = 0x08
     ADMINISTER = 0X80
 
 # 这里要注意需要增加一个UserMixin的一个参数用于标识用户状态，is_authenticated()表示用户已经登陆会返回True,is_active()表示是否允许登陆
@@ -73,7 +73,7 @@ class User(UserMixin,db.Model):
                 self.role = Role.query.filter_by(default=True).first()
 
     def can(self,permissions):
-        return self.role is not None and (self.role.permissions & permissions) ==permissions
+        return self.role is not None and (self.role.permissions & permissions) == permissions
 
     def is_administrator(self):
         return self.can(Permission.ADMINISTER)
@@ -139,10 +139,10 @@ class User(UserMixin,db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
-    class AnonymousUser(AnonymousUserMixin):
-        def can(self,permissions):
-            return False
+class AnonymousUser(AnonymousUserMixin):
+    def can(self,permissions):
+        return False
 
-        def is_administrator(self):
-            return False
-    login_manager.anonymous_user = AnonymousUser
+    def is_administrator(self):
+        return False
+login_manager.anonymous_user = AnonymousUser
