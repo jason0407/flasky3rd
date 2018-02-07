@@ -33,6 +33,7 @@
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ current_user.email }} <b class="caret"></b></a>
                         <ul class="dropdown-menu">
+                            <li><a href="{{ url_for('main.user',username=current_user.username) }}">账号详情</a> </li>
                             <li><a href="{{ url_for('auth.change_password') }}">修改密码</a></li>
                             <li><a href="{{ url_for('auth.change_email_request') }}">修改Email地址</a></li>
                             <li><a href="{{ url_for('auth.logout') }}">退出</a></li>

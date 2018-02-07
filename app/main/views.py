@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import render_template,session,redirect,url_for,flash
+from flask import render_template,session,redirect,url_for,flash,abort
 from flask_login import login_required
 
 from . import main
@@ -66,9 +66,12 @@ def data():
     return render_template('data.html',form = form,name = session.get('name'),known = session.get('know',False))
 
 # 传递参数进去后在render_template里面要使用name=name
-@main.route('/user/<name>')
-def user(name):
-    return render_template('user.html',name=name)
+@main.route('/user/<username>')
+def user(username):
+    user = User.query.filter_by(username = username).first()
+    if user is None:
+        abort(404)
+    return render_template('user.html',user=user)
 
 
 
