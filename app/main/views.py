@@ -1,9 +1,9 @@
 from datetime import datetime
 from flask import render_template,session,redirect,url_for,flash,abort
-from flask_login import login_required
+from flask_login import login_required,current_user
 
 from . import main
-from .forms import NameForm
+from .forms import NameForm,EditProfileForm
 from .. import db
 from app.models import User
 from app.email import send_mail
@@ -92,5 +92,21 @@ def for_admin_only():
 @permission_required(Permission.MODERATE_COMMENTS)
 def for_moderators_only():
     return "For comment moderators!"
+
+@main.route('/edit-profile',methods=['GET','POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    if form.validate_on_submit():
+        current_user.name = form.name.data
+        current_user.location = form.location.data
+        current_user.about_me = form.about_me.data
+        db.session.add(current_user)
+        flash('你的账号已经更新')
+        return redirect(url_for('.user',username = current_user.username))
+    form.name.data = current_user.name
+    form.location.data = current_user.location
+    form.about_me.data = current_user.about_me
+    return render_template('edit_profile.html',form = form)
 
 
