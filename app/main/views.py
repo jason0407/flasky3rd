@@ -3,9 +3,9 @@ from flask import render_template,session,redirect,url_for,flash,abort
 from flask_login import login_required,current_user
 
 from . import main
-from .forms import NameForm,EditProfileForm,EditProfileAdminForm
+from .forms import NameForm,EditProfileForm,EditProfileAdminForm,PostForm
 from .. import db
-from app.models import User,Role
+from app.models import User,Role,Post
 from app.email import send_mail
 from ..decorators import admin_required,permission_required
 from ..models import Permission
@@ -29,9 +29,16 @@ def sendemail():
 # def secret():
 #     flash('未经授权不能查看该网页,请重新登陆')
 #     return redirect(url_for('auth.login'))
-@main.route('/')
+@main.route('/',methods=['GET','POST'])
 def index():
-    return render_template('index.html',current_time = datetime.utcnow())
+    form = PostForm()
+    if  current_user.can(Permission.WRITE_ARTICLES) and \
+        form.validate_on_submit():
+        post = Post(body = form.body.data,author = current_user._get_current_object())
+        db.session.add(post)
+        return redirect(url_for('.index'))
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html',form=form,posts = posts)
 
 # 这里要注意加入POST和GET否则点击后会报500错误
 @main.route('/wtf',methods=['POST','GET'])

@@ -43,6 +43,9 @@ class Role(db.Model):
             db.session.add(role)
         db.session.commit()
 
+    def has_permission(self, perm):
+        return self.permissions & perm == perm
+
     # 返回一个可读性的字符串表示模型主要用于测试
     def __repr__(self):
         return '<Role %r>' % self.name
@@ -71,6 +74,7 @@ class User(UserMixin,db.Model):
     member_since = db.Column(db.DateTime(),default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(),default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
+    post = db.relationship('Post',backref='author',lazy='dynamic')
 
     def ping(self):
         self.last_seen = datetime.utcnow()
@@ -86,8 +90,11 @@ class User(UserMixin,db.Model):
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
 
-    def can(self,permissions):
-        return self.role is not None and (self.role.permissions & permissions) == permissions
+    def can(self, perm):
+        return self.role is not None and self.role.has_permission(perm)
+
+    # def can(self,permissions):
+    #     return self.role is not None and (self.role.permissions & permissions) == permissions
 
     def is_administrator(self):
         return self.can(Permission.ADMINISTER)
@@ -169,3 +176,10 @@ class AnonymousUser(AnonymousUserMixin):
     def is_administrator(self):
         return False
 login_manager.anonymous_user = AnonymousUser
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer,primary_key=True)
+    body = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime,index=True,default=datetime.utcnow)
+    author_id = db.Column(db.Integer,db.ForeignKey('users.id'))
