@@ -34,7 +34,7 @@ class Role(db.Model):
                          Permission.COMMENT |
                          Permission.WRITE_ARTICLES |
                          Permission.MODERATE_COMMENTS,False),
-            'Administraotr':(0xff,False)
+            'Administrator':(0xff,False)
         }
         for r in roles:
             role = Role.query.filter_by(name=r).first()
