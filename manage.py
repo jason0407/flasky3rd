@@ -1,6 +1,6 @@
 # 使用外部方式运行相关程序,增加以后为运行时需要在后面加参数runserver使用
 from app import create_app, db
-from app.models import User, Role
+from app.models import User, Role,Post
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 # 犯了一个很傻B的错误，本来以为这个是放着玩玩的
@@ -16,7 +16,7 @@ manager.add_command('db', MigrateCommand)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, User=User, Role=Role)
+    return dict(app=app, db=db, User=User, Role=Role,Post=Post)
 
 
 manager.add_command("shell", Shell(make_context=make_shell_context))
