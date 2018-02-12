@@ -22,20 +22,35 @@ class Config:
         pass
 
 class DevelopmentConfig(Config):
+    # SQLLITE
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+
 
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    #postgresql改用这个数据
+    SQLALCHEMY_DATABASE_URI = 'postgresql-silhouetted-32125'
+
+class HerokuConfig(ProductionConfig):
+    @classmethod
+    def init_app(cls,app):
+        ProductionConfig.init_app(app)
+
+        import logging
+        from logging import StreamHandler
+        file_handler = StreamHandler()
+        file_handler.setLevel(logging.WARNING)
+        app.logger.addHandler(file_handler)
 
 
 config = {
     'development':DevelopmentConfig,
     'testing':TestingConfig,
     'production':ProductionConfig,
-    'default':DevelopmentConfig
+    # 'default':DevelopmentConfig
+    'default':HerokuConfig
 }
