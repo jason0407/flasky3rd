@@ -29,6 +29,8 @@
                 <li><a href="/redirect">Google</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
+                {% if current_user.can(Permission.MODERATE_COMMENTS) %}<li><a href="{{ url_for('main.moderate') }}">管理评论</a></li>
+                {% endif %}
 {#                这里有一个巨坑，在教程中用的是current_user.is_authenticated(),但实际中已经不用该（）了#}
                 {% if current_user.is_authenticated %}
                     <li class="dropdown">

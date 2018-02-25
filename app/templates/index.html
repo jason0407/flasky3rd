@@ -22,6 +22,7 @@
             <li{% if show_followed %} class="active"{% endif %}><a href="{{ url_for('.show_followed') }}">我关注的文章</a></li>
         {% endif %}
     </ul>
+<br>
     {% include '_posts.html' %}
 
 </div>

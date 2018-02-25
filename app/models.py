@@ -67,6 +67,24 @@ class Follow(db.Model):
                             primary_key=True)
     timestamp = db.Column(db.DateTime,default=datetime.utcnow)
 
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer,primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime,index=True,default=datetime.utcnow)
+    disable = db.Column(db.Boolean)
+    author_id = db.Column(db.Integer,db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer,db.ForeignKey('posts.id'))
+
+
+    @staticmethod
+    def on_change_body(target,value,oldvalue,initiator):
+        allowed_tags = ['a','abbr','acronym','b','code','em','i','strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value,output_format = 'html'),
+                                                       tags=allowed_tags,strip=True))
+db.event.listen(Comment.body,'set',Comment.on_change_body)
+
 # 这里要注意需要增加一个UserMixin的一个参数用于标识用户状态，is_authenticated()表示用户已经登陆会返回True,is_active()表示是否允许登陆
 # is_anonymous()对普通用户必须返回False
 # get_id() 返回唯一标识符
@@ -100,6 +118,7 @@ class User(UserMixin,db.Model):
                                backref=db.backref('followed',lazy='joined'),
                                lazy='dynamic',
                                cascade='all,delete-orphan')
+    comments = db.relationship('Comment',backref='author',lazy='dynamic')
     # 静态方法后面就不用加括号
     @staticmethod
     def add_self_follows():
@@ -258,6 +277,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime,index=True,default=datetime.utcnow)
     author_id = db.Column(db.Integer,db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
+    comments = db.relationship('Comment',backref='post',lazy='dynamic')
 
     # 这里要特别注意一些测试数据，当为空的时候就会有报错。
     @staticmethod
