@@ -35,6 +35,10 @@ class ProductionConfig(Config):
     #postgresql改用这个数据
     SQLALCHEMY_DATABASE_URI = 'postgresql-silhouetted-32125'
 
+class OracleConfig(Config):
+    #postgresql改用这个数据
+    SQLALCHEMY_DATABASE_URI = 'oracle://spectra:artceps@127.0.0.1:11521/xe'
+
 class HerokuConfig(ProductionConfig):
     @classmethod
     def init_app(cls,app):
@@ -51,6 +55,6 @@ config = {
     'development':DevelopmentConfig,
     'testing':TestingConfig,
     'production':ProductionConfig,
-    # 'default':DevelopmentConfig
-    'default':HerokuConfig
+    'default':DevelopmentConfig
+    # 'default':HerokuConfig
 }

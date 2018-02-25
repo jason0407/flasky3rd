@@ -59,6 +59,14 @@ class Permission:
     MODERATE_COMMENTS = 0x08
     ADMINISTER = 0X80
 
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer,db.ForeignKey('users.id'),
+                            primary_key=True)
+    followed_id = db.Column(db.Integer,db.ForeignKey('users.id'),
+                            primary_key=True)
+    timestamp = db.Column(db.DateTime,default=datetime.utcnow)
+
 # 这里要注意需要增加一个UserMixin的一个参数用于标识用户状态，is_authenticated()表示用户已经登陆会返回True,is_active()表示是否允许登陆
 # is_anonymous()对普通用户必须返回False
 # get_id() 返回唯一标识符
@@ -77,6 +85,21 @@ class User(UserMixin,db.Model):
     last_seen = db.Column(db.DateTime(),default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship('Post',backref='author',lazy='dynamic')
+    test1 = db.Column(db.String(32))
+    followed = db.relationship('Follow',
+                               # 使用foreign_keys指定外键
+                               foreign_keys=[Follow.follower_id],
+                               # 将两者指到follower模型，lazy='joined' 从联结查询的模型中加载相关对象
+                               backref=db.backref('follower',lazy='joined'),
+                               # 不会直接返回记录可是返回查询对象
+                               lazy='dynamic',
+                               # cascde将用户添加到数据库会话后，要把对象自动添加到对象中
+                               cascade = 'all,delete-orphan')
+    followers = db.relationship('Follow',
+                               foreign_keys=[Follow.followed_id],
+                               backref=db.backref('followed',lazy='joined'),
+                               lazy='dynamic',
+                               cascade='all,delete-orphan')
 
     def ping(self):
         self.last_seen = datetime.utcnow()
@@ -188,9 +211,32 @@ class User(UserMixin,db.Model):
             url = 'http://www.gravatar.com/avatar'
         hash = self.avatar_hash
         return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(url=url,hash=hash,size=size,default=default,rating=rating)
+    # follow某用户
+    def follow(self,user):
+        if not self.is_following(user):
+            f = Follow(followed = user)
+            self.followed.append(f)
+    def unfollow(self,user):
+        f = self.followed.filter_by(followed_id = user.id).first()
+        if f:
+            self.followed.remove(f)
+    def is_following(self,user):
+        if user.id is None:
+            return False
+        return self.followed.filter_by(followed_id = user.id).first() is not None
+
+    def is_followed_by(self,user):
+        if user.id in None:
+            return False
+        return self.followers.filter_by(follower_id=user.id).first() is not None
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+
+
+
+
 
 class Post(db.Model):
     __tablename__ = 'posts'
@@ -222,6 +268,7 @@ class Post(db.Model):
         target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'),tags=allowed_tags,strip=True))
 
 db.event.listen(Post.body,'set',Post.on_changeed_body)
+
 
 class AnonymousUser(AnonymousUserMixin):
     def can(self,permissions):
