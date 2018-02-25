@@ -45,6 +45,71 @@ def index():
     posts = pagination.items
     return render_template('index.html',form=form,posts = posts,pagination=pagination)
 
+# 开始关注某用户
+@main.route('/follow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('用户信息有误，返回主页')
+        return redirect(url_for('.index'))
+    if current_user.is_following(user):
+        flash('你已经关注了%s' %username)
+        return redirect(url_for('.user',username=username))
+    current_user.follow(user)
+    flash('你已经开始关注%s' %username)
+    return redirect(url_for('.user',username=username))
+
+# 取消关注某用户
+@main.route('/unfollow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('用户信息有误，返回主页')
+        return redirect(url_for('.index'))
+    if not current_user.is_following(user):
+        flash('你尚未关注该用户，返回主页')
+        return redirect(url_for('.user',username=username))
+    current_user.unfollow(user)
+    flash('你已经取消关注%s' %username)
+    return redirect(url_for('.user',username=username))
+
+
+@main.route('/followers/<username>')
+def followers(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('用户信息有误，返回主页')
+        return redirect(url_for('.index'))
+    page = request.args.get('page',1,type=int)
+    pagination = user.followers.paginate(
+        page,per_page= current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
+        error_out=False)
+    follows = [{'user':item.follower,'timestamp':item.timestamp}
+               for item in pagination.items]
+    return render_template('followers.html',user=user,title="关注用户%s的"%username,
+                           endpoint = '.followers',pagination=pagination,followers=followers)
+
+@main.route('/followed-by/<username>')
+def followed_by(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('用户信息有误，返回主页')
+        return redirect(url_for('.index'))
+    page = request.args.get('page',1,type=int)
+    pagination = user.followed.paginate(
+        page,per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
+        error_out=False
+    )
+    follows = [{'user': item.followed,'timestamp':item.timestamp}
+               for item in pagination.items]
+    return render_template('followers.html',user=user,title="被用户%s关注的" %username,
+                           endpoint='.followed_by',pagination=pagination,follows=follows)
+
+
 # 这里要注意加入POST和GET否则点击后会报500错误
 @main.route('/wtf',methods=['POST','GET'])
 def wtf():
