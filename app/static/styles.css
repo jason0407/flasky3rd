@@ -18,6 +18,15 @@ ul.posts li.post {
 ul.posts li.post:hover {
     background-color: #f0f0f0;
 }
+
+div.post-tabs{
+    margin-top: 16px;
+}
+
+div.post-tabs ul.posts{
+    margin: 0px;
+    border-top:none;
+}
 div.post-date {
     float: right;
 }
@@ -64,4 +73,6 @@ div.flask-pagedown-preview h3 {
 .table.followers tr{
     border-bottom: 1px solid #e0e0e0;
 }
+
+
 

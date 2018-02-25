@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import render_template,session,redirect,url_for,flash,abort,request,current_app
+from flask import render_template,session,redirect,url_for,flash,abort,request,current_app,make_response
 from flask_login import login_required,current_user
 
 from . import main
@@ -38,12 +38,19 @@ def index():
         db.session.add(post)
         return redirect(url_for('.index'))
     page = request.args.get('page',1,type=int)
-    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(
+    show_followed = False
+    if current_user.is_authenticated:
+        show_followed = bool(request.cookies.get('show_followed',''))
+    if show_followed:
+        query = current_user.followed_posts
+    else:
+        query = Post.query
+    pagination = query.order_by(Post.timestamp.desc()).paginate(
         page,per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False
     )
     posts = pagination.items
-    return render_template('index.html',form=form,posts = posts,pagination=pagination)
+    return render_template('index.html',form=form,posts = posts,show_followed = show_followed,pagination=pagination)
 
 # 开始关注某用户
 @main.route('/follow/<username>')
@@ -58,6 +65,7 @@ def follow(username):
         flash('你已经关注了%s' %username)
         return redirect(url_for('.user',username=username))
     current_user.follow(user)
+    db.session.commit()
     flash('你已经开始关注%s' %username)
     return redirect(url_for('.user',username=username))
 
@@ -74,6 +82,7 @@ def unfollow(username):
         flash('你尚未关注该用户，返回主页')
         return redirect(url_for('.user',username=username))
     current_user.unfollow(user)
+    db.session.commit()
     flash('你已经取消关注%s' %username)
     return redirect(url_for('.user',username=username))
 
@@ -90,7 +99,7 @@ def followers(username):
         error_out=False)
     follows = [{'user':item.follower,'timestamp':item.timestamp}
                for item in pagination.items]
-    return render_template('followers.html',user=user,title="关注用户%s的"%username,
+    return render_template('followers.html',user=user,title="关注你的用户",
                            endpoint = '.followers',pagination=pagination,followers=followers)
 
 @main.route('/followed-by/<username>')
@@ -106,9 +115,25 @@ def followed_by(username):
     )
     follows = [{'user': item.followed,'timestamp':item.timestamp}
                for item in pagination.items]
-    return render_template('followers.html',user=user,title="被用户%s关注的" %username,
+    return render_template('followers.html',user=user,title="你关注的用户",
                            endpoint='.followed_by',pagination=pagination,follows=follows)
 
+
+
+@main.route('/all')
+@login_required
+def show_all():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_followed','',max_age=30*24*60*60)
+    return resp
+
+
+@main.route('/followed')
+@login_required
+def show_followed():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_followed','1',max_age=30*24*60*60)
+    return resp
 
 # 这里要注意加入POST和GET否则点击后会报500错误
 @main.route('/wtf',methods=['POST','GET'])
@@ -180,6 +205,7 @@ def edit_profile():
         current_user.location = form.location.data
         current_user.about_me = form.about_me.data
         db.session.add(current_user)
+        db.session.commit()
         flash('你的账号已经更新')
         return redirect(url_for('.user',username = current_user.username))
     form.name.data = current_user.name
@@ -202,6 +228,7 @@ def edit_profile_admin(id):
         user.location = form.location.data
         user.about_me = form.about_me.data
         db.session.add(user)
+        db.session.commit()
         flash('你的账号已经更新成功！')
         return redirect(url_for('.user',username = user.username))
     form.email.data = user.email

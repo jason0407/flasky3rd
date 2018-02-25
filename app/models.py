@@ -100,6 +100,14 @@ class User(UserMixin,db.Model):
                                backref=db.backref('followed',lazy='joined'),
                                lazy='dynamic',
                                cascade='all,delete-orphan')
+    # 静态方法后面就不用加括号
+    @staticmethod
+    def add_self_follows():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
 
     def ping(self):
         self.last_seen = datetime.utcnow()
@@ -114,6 +122,7 @@ class User(UserMixin,db.Model):
                 self.role = Role.query.filter_by(default=True).first()
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
+            self.follow(self)
 
     def can(self, perm):
         return self.role is not None and self.role.has_permission(perm)
@@ -229,6 +238,10 @@ class User(UserMixin,db.Model):
         if user.id in None:
             return False
         return self.followers.filter_by(follower_id=user.id).first() is not None
+
+    @property
+    def followed_posts(self):
+        return  Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.followed_id == self.id)
 
     def __repr__(self):
         return '<User %r>' % self.username
