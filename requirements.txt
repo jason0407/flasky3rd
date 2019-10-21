@@ -56,7 +56,7 @@ Tempita==0.5.2
 urllib3==1.22
 visitor==0.1.3
 webencodings==0.5.1
-Werkzeug==0.12.2
+Werkzeug==0.15.3
 Whoosh==2.7.4
 WTForms==2.1
 psycopg2==2.5.1
